@@ -34,7 +34,7 @@ async def list_docs(db: AsyncSession = Depends(get_db)):
 async def upload_doc(
 	title: str = Form(...),
 	author: str = Form(...),
-	price: float = Form(...),
+	price: float | None = Form(None),
 	description: str | None = Form(None),
 	file: UploadFile = File(...),
 	db: AsyncSession = Depends(get_db),

@@ -7,7 +7,7 @@ class DocsBase(BaseModel):
     # 这里定义创建和返回都会复用的公共字段。
     title: str = Field(..., min_length=1, max_length=255, description="文档标题")
     author: str = Field(..., min_length=1, max_length=255, description="作者")
-    price: float = Field(..., ge=0, description="价格")
+    price: float | None = Field(default=None, ge=0, description="价格（选填）")
     description: str | None = Field(default=None, max_length=255, description="描述")
 
 
