@@ -245,15 +245,41 @@
         .empty-state h3 { font-size: 1.1rem; font-weight: 600; margin: 0 0 8px; }
         .empty-state p  { font-size: .88rem; color: var(--text-muted); margin: 0 0 24px; }
 
-        /* ── 弹窗 ── */
-        .modal-backdrop.show { backdrop-filter: blur(4px); }
-        .modal-dialog-centered .modal-content {
-            border: none !important;
-            border-radius: 22px !important;
-            box-shadow: 0 24px 64px rgba(0,0,0,.18) !important;
-            overflow: hidden;
+        /* ── 自定义弹窗遮罩 ── */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .45);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease;
         }
-        .modal-inner { padding: 32px 28px; text-align: center; }
+        .overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .dialog {
+            background: var(--surface);
+            border-radius: 22px;
+            box-shadow: 0 24px 64px rgba(0,0,0,.22);
+            width: 320px;
+            max-width: calc(100vw - 40px);
+            padding: 32px 28px;
+            text-align: center;
+            transform: scale(.94) translateY(8px);
+            transition: transform .22s ease, opacity .22s ease;
+            opacity: 0;
+        }
+        .overlay.open .dialog {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
         .modal-del-icon {
             width: 58px; height: 58px;
             border-radius: 16px;
@@ -423,18 +449,14 @@
 </main>
 
 <!-- 删除确认弹窗 -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content">
-            <div class="modal-inner">
-                <div class="modal-del-icon"><i class="bi bi-trash3"></i></div>
-                <div class="modal-title">确认删除？</div>
-                <div class="modal-sub" id="delete-doc-name"></div>
-                <div class="modal-actions">
-                    <button class="btn-cancel" data-bs-dismiss="modal">取消</button>
-                    <button class="btn-confirm-del" id="confirm-delete-btn">确认删除</button>
-                </div>
-            </div>
+<div class="overlay" id="deleteOverlay">
+    <div class="dialog">
+        <div class="modal-del-icon"><i class="bi bi-trash3"></i></div>
+        <div class="modal-title">确认删除？</div>
+        <div class="modal-sub" id="delete-doc-name"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" id="cancel-delete-btn">取消</button>
+            <button class="btn-confirm-del" id="confirm-delete-btn">确认删除</button>
         </div>
     </div>
 </div>
@@ -447,10 +469,16 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const overlay = document.getElementById('deleteOverlay');
     let pendingDeleteId = null;
+
+    function openModal()  { overlay.classList.add('open');    document.body.style.overflow = 'hidden'; }
+    function closeModal() { overlay.classList.remove('open'); document.body.style.overflow = ''; }
+
+    // 点击遮罩背景关闭
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+    document.getElementById('cancel-delete-btn').addEventListener('click', closeModal);
 
     function showToast(msg, success = true) {
         const card = document.getElementById('toast-card');
@@ -463,12 +491,12 @@
     function confirmDelete(docId, docTitle) {
         pendingDeleteId = docId;
         document.getElementById('delete-doc-name').textContent = `"${docTitle}"`;
-        deleteModal.show();
+        openModal();
     }
 
     document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
         if (!pendingDeleteId) return;
-        deleteModal.hide();
+        closeModal();
         try {
             const res = await fetch(`/books/${pendingDeleteId}`, { method: 'DELETE' });
             if (!res.ok) throw new Error();
