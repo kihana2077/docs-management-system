@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Docs Management System", lifespan=lifespan)
 
-app.include_router(books_router)
+app.include_router(books_router) #把书籍相关的路由注册到主应用上，保持代码模块化和清晰
 
 
 @app.get("/")

@@ -10,7 +10,7 @@ from backend import crud, schemas
 from backend.config import get_settings
 from backend.database import get_db
 
-router = APIRouter(prefix="/books", tags=["books"])
+router = APIRouter(prefix="/books", tags=["books"]) #创建迷你路由
 settings = get_settings()
 
 
