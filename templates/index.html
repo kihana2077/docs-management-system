@@ -1,236 +1,489 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文档管理系统</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; }
-        .navbar-brand { font-weight: 700; letter-spacing: .5px; }
-
-        .doc-card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.08);
-            transition: transform .2s, box-shadow .2s;
+        :root {
+            --bg:             #f1f4fd;
+            --surface:        #ffffff;
+            --border:         #e4e8f5;
+            --border-hover:   #c9d0ed;
+            --text:           #111827;
+            --text-secondary: #4b5563;
+            --text-muted:     #9ca3af;
+            --accent:         #5b4cfe;
+            --accent-soft:    #edeaff;
+            --accent-grad:    linear-gradient(135deg, #5b4cfe 0%, #8b5cf6 100%);
+            --danger:         #ef4444;
+            --danger-soft:    #fef2f2;
+            --radius-lg:      18px;
+            --radius-md:      12px;
+            --radius-sm:      8px;
+            --shadow-xs:      0 1px 2px rgba(0,0,0,.05);
+            --shadow-sm:      0 1px 8px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+            --shadow-md:      0 4px 20px rgba(0,0,0,.09), 0 1px 4px rgba(0,0,0,.05);
         }
-        .doc-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,.13);
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* 文件类型图标色块 */
-        .file-icon {
-            width: 48px; height: 48px;
+        /* ── 顶栏 ── */
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            height: 62px;
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: var(--shadow-xs);
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .brand-logo {
+            width: 34px; height: 34px;
             border-radius: 10px;
+            background: var(--accent-grad);
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem;
-            flex-shrink: 0;
-        }
-        .icon-pdf   { background: #fff0f0; color: #e53e3e; }
-        .icon-word  { background: #ebf8ff; color: #3182ce; }
-        .icon-excel { background: #f0fff4; color: #38a169; }
-        .icon-ppt   { background: #fffaf0; color: #dd6b20; }
-        .icon-img   { background: #faf5ff; color: #805ad5; }
-        .icon-other { background: #f7fafc; color: #718096; }
-
-        .price-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #fff;
-            font-size: .72rem;
-            padding: 3px 10px;
-            border-radius: 20px;
+            font-size: .95rem;
+        }
+        .brand-text {
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -.25px;
+        }
+        .topbar-gap { flex: 1; }
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--accent-grad);
+            color: #fff;
+            font-family: inherit;
+            font-size: .82rem;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: var(--radius-sm);
+            border: none;
+            text-decoration: none;
+            cursor: pointer;
+            transition: opacity .15s, transform .12s;
             white-space: nowrap;
         }
+        .btn-primary:hover { opacity: .9; transform: translateY(-1px); color: #fff; }
+        .btn-primary:active { transform: translateY(0); }
 
-        .empty-state { padding: 80px 0; }
-        .toast-container { z-index: 9999; }
+        /* ── 页面 ── */
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 36px 28px 72px;
+        }
+        .page-head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-head h1 {
+            font-size: 1.45rem;
+            font-weight: 700;
+            margin: 0 0 3px;
+            letter-spacing: -.3px;
+        }
+        .page-head p { font-size: .83rem; color: var(--text-muted); margin: 0; }
+        .badge-count {
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: .74rem;
+            font-weight: 700;
+            padding: 5px 13px;
+            border-radius: 20px;
+        }
+
+        /* ── 网格 ── */
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(288px, 1fr));
+            gap: 18px;
+        }
+
+        /* ── 卡片 ── */
+        .doc-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+        .doc-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-hover);
+        }
+        .doc-card-body { padding: 20px; flex: 1; }
+        .card-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 13px;
+            margin-bottom: 12px;
+        }
+        .file-icon {
+            width: 44px; height: 44px;
+            border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .icon-pdf   { background: #fff0f0; color: #dc2626; }
+        .icon-word  { background: #eff6ff; color: #2563eb; }
+        .icon-excel { background: #f0fdf4; color: #16a34a; }
+        .icon-ppt   { background: #fff7ed; color: #ea580c; }
+        .icon-img   { background: #faf5ff; color: #7c3aed; }
+        .icon-other { background: #f8f9fc; color: #6b7280; }
+        .card-title-wrap { flex: 1; min-width: 0; }
+        .card-title {
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0 0 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-author { font-size: .78rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+        .price-tag {
+            flex-shrink: 0;
+            background: var(--accent-grad);
+            color: #fff;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .card-desc {
+            font-size: .8rem;
+            color: var(--text-secondary);
+            margin: 0 0 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-desc.empty { color: var(--text-muted); font-style: italic; }
+        .card-meta { font-size: .75rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+
+        /* ── 卡片底部 ── */
+        .doc-card-foot {
+            padding: 11px 16px 14px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid var(--border);
+        }
+        .btn-action {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: inherit;
+            font-size: .79rem;
+            font-weight: 500;
+            padding: 8px 0;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: transparent;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background .15s, border-color .15s, color .15s;
+        }
+        .btn-download { color: var(--accent); border-color: #d4d0fd; }
+        .btn-download:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+        .btn-delete { color: var(--danger); border-color: #fecaca; }
+        .btn-delete:hover { background: var(--danger-soft); border-color: var(--danger); }
+
+        /* ── 空状态 ── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 100px 0;
+        }
+        .empty-icon {
+            width: 76px; height: 76px;
+            border-radius: 22px;
+            background: var(--accent-soft);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+        .empty-state h3 { font-size: 1.1rem; font-weight: 600; margin: 0 0 8px; }
+        .empty-state p  { font-size: .88rem; color: var(--text-muted); margin: 0 0 24px; }
+
+        /* ── 弹窗 ── */
+        .modal-backdrop.show { backdrop-filter: blur(4px); }
+        .modal-dialog-centered .modal-content {
+            border: none !important;
+            border-radius: 22px !important;
+            box-shadow: 0 24px 64px rgba(0,0,0,.18) !important;
+            overflow: hidden;
+        }
+        .modal-inner { padding: 32px 28px; text-align: center; }
+        .modal-del-icon {
+            width: 58px; height: 58px;
+            border-radius: 16px;
+            background: var(--danger-soft);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 1.7rem;
+            color: var(--danger);
+            margin-bottom: 16px;
+        }
+        .modal-title { font-size: 1rem; font-weight: 700; margin: 0 0 5px; }
+        .modal-sub   { font-size: .83rem; color: var(--text-muted); margin: 0 0 22px; }
+        .modal-actions { display: flex; gap: 10px; }
+        .btn-cancel {
+            flex: 1; padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            font-family: inherit;
+            font-size: .84rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .btn-cancel:hover { background: #f5f6fa; }
+        .btn-confirm-del {
+            flex: 1; padding: 10px;
+            border-radius: 10px;
+            border: none;
+            background: var(--danger);
+            color: #fff;
+            font-family: inherit;
+            font-size: .84rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .15s;
+        }
+        .btn-confirm-del:hover { opacity: .87; }
+
+        /* ── Toast ── */
+        .toast-wrap {
+            position: fixed;
+            bottom: 28px; right: 28px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .toast-card {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 13px 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.13);
+            font-size: .84rem;
+            font-weight: 500;
+            color: var(--text);
+            min-width: 220px;
+            transform: translateY(12px);
+            opacity: 0;
+            transition: transform .25s ease, opacity .25s ease;
+        }
+        .toast-card.show { transform: translateY(0); opacity: 1; }
+        .toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+        @media (max-width: 640px) {
+            .topbar { padding: 0 16px; }
+            .page   { padding: 22px 16px 56px; }
+            .docs-grid { grid-template-columns: 1fr; }
+            .page-head { flex-direction: column; align-items: flex-start; }
+        }
     </style>
 </head>
 <body>
 
-<!-- 顶部导航栏 -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-    <div class="container">
-        <a class="navbar-brand" href="/">
-            <i class="bi bi-folder2-open me-2"></i>文档管理系统
-        </a>
-        <a href="/upload" class="btn btn-primary btn-sm ms-auto">
-            <i class="bi bi-cloud-upload me-1"></i>上传文档
-        </a>
-    </div>
-</nav>
+<header class="topbar">
+    <a class="brand" href="/">
+        <div class="brand-logo"><i class="bi bi-layers-fill"></i></div>
+        <span class="brand-text">文档管理系统</span>
+    </a>
+    <div class="topbar-gap"></div>
+    <a href="/upload" class="btn-primary">
+        <i class="bi bi-cloud-upload"></i>上传文档
+    </a>
+</header>
 
-<!-- 主内容区 -->
-<div class="container py-4">
+<main class="page">
 
-    <!-- 统计栏 -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="page-head">
         <div>
-            <h5 class="mb-0 fw-bold text-dark">全部文档</h5>
-            <small class="text-muted">共 <span id="total-count">{{ docs|length }}</span> 份文档</small>
+            <h1>全部文档</h1>
+            <p>管理你的所有上传文件</p>
         </div>
+        <span class="badge-count">共 {{ docs|length }} 份</span>
     </div>
 
-    <!-- 空状态 -->
     {% if not docs %}
-    <div class="text-center empty-state">
-        <i class="bi bi-inbox display-1 text-muted"></i>
-        <p class="mt-3 text-muted fs-5">暂无文档，快去上传一份吧！</p>
-        <a href="/upload" class="btn btn-primary mt-2">
-            <i class="bi bi-cloud-upload me-1"></i>立即上传
+    <div class="empty-state">
+        <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+        <h3>暂无文档</h3>
+        <p>还没有任何文档，快去上传一份吧！</p>
+        <a href="/upload" class="btn-primary">
+            <i class="bi bi-cloud-upload"></i>立即上传
         </a>
     </div>
 
     {% else %}
-    <!-- 文档卡片网格 -->
-    <div class="row g-3" id="docs-grid">
+    <div class="docs-grid" id="docs-grid">
         {% for doc in docs %}
-        <div class="col-12 col-sm-6 col-lg-4" id="doc-card-{{ doc.id }}">
-            <div class="card doc-card h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-start gap-3 mb-3">
-
-                        <!-- 根据文件扩展名显示不同图标 -->
-                        {% set ext = doc.filename.rsplit('.', 1)[-1].lower() if '.' in doc.filename else '' %}
-                        {% if ext == 'pdf' %}
-                            <div class="file-icon icon-pdf"><i class="bi bi-file-earmark-pdf"></i></div>
-                        {% elif ext in ['doc', 'docx'] %}
-                            <div class="file-icon icon-word"><i class="bi bi-file-earmark-word"></i></div>
-                        {% elif ext in ['xls', 'xlsx'] %}
-                            <div class="file-icon icon-excel"><i class="bi bi-file-earmark-excel"></i></div>
-                        {% elif ext in ['ppt', 'pptx'] %}
-                            <div class="file-icon icon-ppt"><i class="bi bi-file-earmark-ppt"></i></div>
-                        {% elif ext in ['png', 'jpg', 'jpeg', 'gif', 'webp'] %}
-                            <div class="file-icon icon-img"><i class="bi bi-file-earmark-image"></i></div>
-                        {% else %}
-                            <div class="file-icon icon-other"><i class="bi bi-file-earmark"></i></div>
-                        {% endif %}
-
-                        <div class="flex-grow-1 overflow-hidden">
-                            <h6 class="mb-1 fw-semibold text-truncate" title="{{ doc.title }}">{{ doc.title }}</h6>
-                            <span class="text-muted small">{{ doc.author }}</span>
-                        </div>
-                        {% if doc.price is not none %}
-                        <span class="price-badge">¥{{ "%.2f"|format(doc.price) }}</span>
-                        {% endif %}
-                    </div>
-
-                    <!-- 描述（超出省略） -->
-                    {% if doc.description %}
-                    <p class="text-muted small mb-3 text-truncate" title="{{ doc.description }}">
-                        {{ doc.description }}
-                    </p>
+        <div class="doc-card" id="doc-card-{{ doc.id }}">
+            <div class="doc-card-body">
+                <div class="card-head">
+                    {% set ext = doc.filename.rsplit('.', 1)[-1].lower() if '.' in doc.filename else '' %}
+                    {% if ext == 'pdf' %}
+                        <div class="file-icon icon-pdf"><i class="bi bi-file-earmark-pdf-fill"></i></div>
+                    {% elif ext in ['doc', 'docx'] %}
+                        <div class="file-icon icon-word"><i class="bi bi-file-earmark-word-fill"></i></div>
+                    {% elif ext in ['xls', 'xlsx'] %}
+                        <div class="file-icon icon-excel"><i class="bi bi-file-earmark-excel-fill"></i></div>
+                    {% elif ext in ['ppt', 'pptx'] %}
+                        <div class="file-icon icon-ppt"><i class="bi bi-file-earmark-ppt-fill"></i></div>
+                    {% elif ext in ['png', 'jpg', 'jpeg', 'gif', 'webp'] %}
+                        <div class="file-icon icon-img"><i class="bi bi-file-earmark-image-fill"></i></div>
                     {% else %}
-                    <p class="text-muted small mb-3 fst-italic">暂无描述</p>
+                        <div class="file-icon icon-other"><i class="bi bi-file-earmark-fill"></i></div>
                     {% endif %}
 
-                    <!-- 上传时间 -->
-                    <small class="text-muted">
-                        <i class="bi bi-clock me-1"></i>
-                        {% if doc.create_time %}{{ doc.create_time.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}
-                    </small>
+                    <div class="card-title-wrap">
+                        <div class="card-title" title="{{ doc.title }}">{{ doc.title }}</div>
+                        <div class="card-author"><i class="bi bi-person"></i>{{ doc.author }}</div>
+                    </div>
+
+                    {% if doc.price is not none %}
+                    <span class="price-tag">¥{{ "%.2f"|format(doc.price) }}</span>
+                    {% endif %}
                 </div>
 
-                <!-- 操作按钮 -->
-                <div class="card-footer bg-transparent border-0 pt-0 d-flex gap-2 pb-3 px-3">
-                    <a href="/books/{{ doc.id }}/download"
-                       class="btn btn-outline-primary btn-sm flex-fill">
-                        <i class="bi bi-download me-1"></i>下载
-                    </a>
-                    <button class="btn btn-outline-danger btn-sm flex-fill"
-                            onclick="confirmDelete({{ doc.id }}, '{{ doc.title }}')">
-                        <i class="bi bi-trash3 me-1"></i>删除
-                    </button>
+                {% if doc.description %}
+                <div class="card-desc" title="{{ doc.description }}">{{ doc.description }}</div>
+                {% else %}
+                <div class="card-desc empty">暂无描述</div>
+                {% endif %}
+
+                <div class="card-meta">
+                    <i class="bi bi-clock"></i>
+                    {% if doc.create_time %}{{ doc.create_time.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}
                 </div>
+            </div>
+
+            <div class="doc-card-foot">
+                <a href="/books/{{ doc.id }}/download" class="btn-action btn-download">
+                    <i class="bi bi-download"></i>下载
+                </a>
+                <button class="btn-action btn-delete"
+                        data-doc-id="{{ doc.id }}"
+                        data-doc-title="{{ doc.title }}"
+                        onclick="confirmDelete(this.dataset.docId, this.dataset.docTitle)">
+                    <i class="bi bi-trash3"></i>删除
+                </button>
             </div>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-</div>
+</main>
 
 <!-- 删除确认弹窗 -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-body text-center p-4">
-                <div class="text-danger mb-3" style="font-size:2.5rem">
-                    <i class="bi bi-exclamation-triangle"></i>
-                </div>
-                <h6 class="fw-bold mb-1">确认删除？</h6>
-                <p class="text-muted small mb-3" id="delete-doc-name"></p>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-secondary flex-fill btn-sm" data-bs-dismiss="modal">取消</button>
-                    <button class="btn btn-danger flex-fill btn-sm" id="confirm-delete-btn">确认删除</button>
+        <div class="modal-content">
+            <div class="modal-inner">
+                <div class="modal-del-icon"><i class="bi bi-trash3"></i></div>
+                <div class="modal-title">确认删除？</div>
+                <div class="modal-sub" id="delete-doc-name"></div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" data-bs-dismiss="modal">取消</button>
+                    <button class="btn-confirm-del" id="confirm-delete-btn">确认删除</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 操作结果 Toast 通知 -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="toast" class="toast align-items-center border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body fw-semibold" id="toast-msg"></div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                    data-bs-dismiss="toast"></button>
-        </div>
+<!-- Toast 通知 -->
+<div class="toast-wrap">
+    <div class="toast-card" id="toast-card">
+        <div class="toast-dot" id="toast-dot"></div>
+        <span id="toast-msg"></span>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    const toastEl    = document.getElementById('toast');
-    const bsToast    = new bootstrap.Toast(toastEl, { delay: 2500 });
-
     let pendingDeleteId = null;
 
     function showToast(msg, success = true) {
-        toastEl.className = `toast align-items-center border-0 text-bg-${success ? 'success' : 'danger'}`;
+        const card = document.getElementById('toast-card');
+        document.getElementById('toast-dot').style.background = success ? '#10b981' : '#ef4444';
         document.getElementById('toast-msg').textContent = msg;
-        bsToast.show();
+        card.classList.add('show');
+        setTimeout(() => card.classList.remove('show'), 2800);
     }
 
-    // 点击删除按钮 → 弹出确认框
     function confirmDelete(docId, docTitle) {
         pendingDeleteId = docId;
         document.getElementById('delete-doc-name').textContent = `"${docTitle}"`;
         deleteModal.show();
     }
 
-    // 确认删除 → 调用 API → 动画移除卡片
     document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
         if (!pendingDeleteId) return;
         deleteModal.hide();
-
         try {
             const res = await fetch(`/books/${pendingDeleteId}`, { method: 'DELETE' });
             if (!res.ok) throw new Error();
-
             const card = document.getElementById(`doc-card-${pendingDeleteId}`);
-            card.style.transition = 'opacity .3s, transform .3s';
+            card.style.transition = 'opacity .25s, transform .25s';
             card.style.opacity = '0';
-            card.style.transform = 'scale(.95)';
+            card.style.transform = 'scale(.96)';
             setTimeout(() => {
                 card.remove();
-                const countEl = document.getElementById('total-count');
-                const newCount = parseInt(countEl.textContent) - 1;
-                countEl.textContent = newCount;
-                // 全部删完后刷新页面显示空状态
-                if (newCount === 0) location.reload();
-            }, 300);
-
+                if (document.getElementById('docs-grid')?.children.length === 0) location.reload();
+            }, 270);
             showToast('文档已成功删除');
         } catch {
             showToast('删除失败，请稍后重试', false);
         }
-
         pendingDeleteId = null;
     });
 </script>

@@ -1,229 +1,402 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>上传文档 - 文档管理系统</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; }
-        .upload-card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0,0,0,.10);
+        :root {
+            --bg:             #f1f4fd;
+            --surface:        #ffffff;
+            --border:         #e4e8f5;
+            --text:           #111827;
+            --text-secondary: #4b5563;
+            --text-muted:     #9ca3af;
+            --accent:         #5b4cfe;
+            --accent-soft:    #edeaff;
+            --accent-grad:    linear-gradient(135deg, #5b4cfe 0%, #8b5cf6 100%);
+            --danger:         #ef4444;
+            --danger-soft:    #fef2f2;
+            --success:        #10b981;
+            --success-soft:   #f0fdf4;
+            --radius-lg:      18px;
+            --radius-md:      12px;
+            --radius-sm:      8px;
+            --shadow-xs:      0 1px 2px rgba(0,0,0,.05);
+            --shadow-md:      0 4px 20px rgba(0,0,0,.09), 0 1px 4px rgba(0,0,0,.05);
         }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── 顶栏 ── */
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            height: 62px;
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: var(--shadow-xs);
+        }
+        .brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none;
+        }
+        .brand-logo {
+            width: 34px; height: 34px;
+            border-radius: 10px;
+            background: var(--accent-grad);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: .95rem;
+        }
+        .brand-text { font-size: .9rem; font-weight: 700; color: var(--text); letter-spacing: -.25px; }
+        .topbar-gap { flex: 1; }
+        .btn-back {
+            display: inline-flex; align-items: center; gap: 7px;
+            font-family: inherit;
+            font-size: .82rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 7px 15px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+        .btn-back:hover { background: #f4f5fa; color: var(--text); }
+
+        /* ── 页面 ── */
+        .page {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* ── 提示区 ── */
+        .alert-area { margin-bottom: 16px; }
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: .84rem;
+            font-weight: 500;
+        }
+        .alert-danger  { background: var(--danger-soft);  color: var(--danger);  border: 1px solid #fecaca; }
+        .alert-success { background: var(--success-soft); color: var(--success); border: 1px solid #bbf7d0; }
+
+        /* ── 卡片 ── */
+        .upload-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        /* 卡片渐变头 */
+        .card-header-band {
+            background: var(--accent-grad);
+            padding: 28px 32px 26px;
+            color: #fff;
+        }
+        .card-header-band h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0 0 4px;
+        }
+        .card-header-band p { font-size: .82rem; opacity: .8; margin: 0; }
+
+        .card-body { padding: 28px 32px 32px; }
+
+        /* ── 拖拽区 ── */
         .drop-zone {
-            border: 2px dashed #c3c8d4;
-            border-radius: 12px;
-            padding: 36px 20px;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-lg);
+            padding: 36px 24px;
             text-align: center;
             cursor: pointer;
             transition: border-color .2s, background .2s;
             user-select: none;
+            margin-bottom: 26px;
         }
         .drop-zone:hover, .drop-zone.dragover {
-            border-color: #0d6efd;
-            background: #f0f5ff;
+            border-color: var(--accent);
+            background: var(--accent-soft);
         }
-        .drop-zone .drop-icon {
-            font-size: 2.6rem;
-            color: #adb5bd;
-            transition: color .2s;
+        .drop-zone.has-file {
+            border-color: var(--accent);
+            background: var(--accent-soft);
         }
-        .drop-zone.has-file .drop-icon { color: #0d6efd; }
-        .drop-zone.has-file { border-color: #0d6efd; background: #f0f5ff; }
+        .drop-icon-wrap {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            background: var(--accent-soft);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 1.45rem;
+            color: var(--accent);
+            margin-bottom: 12px;
+            transition: background .2s, color .2s;
+        }
+        .drop-zone.has-file .drop-icon-wrap {
+            background: var(--accent-grad);
+            color: #fff;
+        }
+        .drop-title { font-size: .9rem; font-weight: 600; color: var(--text); margin: 0 0 4px; }
+        .drop-hint  { font-size: .78rem; color: var(--text-muted); margin: 0; }
+
+        /* ── 表单字段 ── */
+        .divider { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+
+        .field { margin-bottom: 18px; }
+        .field-label {
+            display: block;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 7px;
+        }
+        .req { color: var(--danger); }
+        .opt { color: var(--text-muted); font-weight: 400; }
+
+        .field-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: .88rem;
+            color: var(--text);
+            background: #fafbff;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s, background .15s;
+        }
+        .field-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(91,76,254,.1);
+            background: #fff;
+        }
+        .field-input::placeholder { color: #c4c9d9; }
+
+        .price-wrap { display: flex; }
+        .price-prefix {
+            display: flex; align-items: center;
+            padding: 10px 13px;
+            border: 1px solid var(--border);
+            border-right: none;
+            border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+            background: #f4f5f9;
+            color: var(--text-muted);
+            font-size: .88rem;
+            font-weight: 500;
+        }
+        .price-wrap .field-input { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
+        textarea.field-input { resize: vertical; min-height: 88px; }
+
+        /* ── 提交按钮 ── */
+        .btn-submit {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            background: var(--accent-grad);
+            color: #fff;
+            font-family: inherit;
+            font-size: .91rem;
+            font-weight: 600;
+            padding: 13px;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: opacity .15s, transform .12s;
+        }
+        .btn-submit:hover    { opacity: .9; transform: translateY(-1px); }
+        .btn-submit:active   { transform: translateY(0); }
+        .btn-submit:disabled { opacity: .55; transform: none; cursor: not-allowed; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin .8s linear infinite; display: inline-block; }
+
+        @media (max-width: 640px) {
+            .topbar { padding: 0 16px; }
+            .page   { padding: 24px 16px 60px; }
+            .card-header-band { padding: 22px 20px; }
+            .card-body { padding: 20px; }
+        }
     </style>
 </head>
 <body>
 
-<!-- 顶部导航栏 -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-    <div class="container">
-        <a class="navbar-brand" href="/">
-            <i class="bi bi-folder2-open me-2"></i>文档管理系统
-        </a>
-        <a href="/" class="btn btn-outline-light btn-sm ms-auto">
-            <i class="bi bi-arrow-left me-1"></i>返回列表
-        </a>
-    </div>
-</nav>
+<header class="topbar">
+    <a class="brand" href="/">
+        <div class="brand-logo"><i class="bi bi-layers-fill"></i></div>
+        <span class="brand-text">文档管理系统</span>
+    </a>
+    <div class="topbar-gap"></div>
+    <a href="/" class="btn-back">
+        <i class="bi bi-arrow-left"></i>返回列表
+    </a>
+</header>
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-8 col-lg-6">
+<div class="page">
 
-            <!-- 提示区（动态显示成功/失败消息） -->
-            <div id="alert-area" class="mb-3"></div>
+    <div id="alert-area" class="alert-area"></div>
 
-            <div class="card upload-card">
-                <div class="card-body p-4 p-md-5">
-                    <h5 class="fw-bold mb-1">上传新文档</h5>
-                    <p class="text-muted small mb-4">填写文档信息并选择要上传的文件</p>
+    <div class="upload-card">
+        <!-- 渐变头 -->
+        <div class="card-header-band">
+            <h2><i class="bi bi-cloud-arrow-up me-2"></i>上传新文档</h2>
+            <p>填写文档信息并选择要上传的文件</p>
+        </div>
 
-                    <form id="upload-form" novalidate>
+        <div class="card-body">
+            <form id="upload-form" novalidate>
 
-                        <!-- 文件拖拽区域 -->
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">
-                                选择文件 <span class="text-danger">*</span>
-                            </label>
-                            <div class="drop-zone" id="drop-zone"
-                                 onclick="document.getElementById('file-input').click()">
-                                <div class="drop-icon mb-2">
-                                    <i class="bi bi-cloud-arrow-up" id="drop-icon"></i>
-                                </div>
-                                <p class="mb-1 fw-semibold" id="drop-text">点击或拖拽文件到此处</p>
-                                <p class="text-muted small mb-0" id="drop-hint">
-                                    支持 PDF、Word、Excel、图片等常见格式
-                                </p>
-                            </div>
-                            <!-- 隐藏的原生 file input -->
-                            <input type="file" id="file-input" class="d-none">
-                        </div>
-
-                        <!-- 文档标题 -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                文档标题 <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" class="form-control" id="title"
-                                   placeholder="请输入文档标题" maxlength="255">
-                        </div>
-
-                        <!-- 作者 -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                作者 <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" class="form-control" id="author"
-                                   placeholder="请输入作者姓名" maxlength="255">
-                        </div>
-
-                        <!-- 价格 -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                价格 <span class="text-danger">*</span>
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">¥</span>
-                                <input type="number" class="form-control" id="price"
-                                       placeholder="0.00" min="0" step="0.01" value="0">
-                            </div>
-                        </div>
-
-                        <!-- 描述（选填） -->
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">描述
-                                <span class="text-muted fw-normal">（选填）</span>
-                            </label>
-                            <textarea class="form-control" id="description" rows="3"
-                                      placeholder="简单描述这份文档的内容"
-                                      maxlength="255"></textarea>
-                        </div>
-
-                        <!-- 提交按钮 -->
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
-                                <i class="bi bi-cloud-upload me-2"></i>上传文档
-                            </button>
-                        </div>
-
-                    </form>
+                <!-- 拖拽上传区 -->
+                <div class="drop-zone" id="drop-zone"
+                     onclick="document.getElementById('file-input').click()">
+                    <div class="drop-icon-wrap">
+                        <i class="bi bi-cloud-arrow-up" id="drop-icon-i"></i>
+                    </div>
+                    <p class="drop-title" id="drop-text">点击或拖拽文件到此处</p>
+                    <p class="drop-hint"  id="drop-hint">支持 PDF、Word、Excel、图片等常见格式</p>
                 </div>
-            </div>
+                <input type="file" id="file-input" style="display:none">
 
+                <hr class="divider">
+
+                <!-- 标题 -->
+                <div class="field">
+                    <label class="field-label">文档标题 <span class="req">*</span></label>
+                    <input type="text" class="field-input" id="title"
+                           placeholder="请输入文档标题" maxlength="255">
+                </div>
+
+                <!-- 作者 -->
+                <div class="field">
+                    <label class="field-label">作者 <span class="req">*</span></label>
+                    <input type="text" class="field-input" id="author"
+                           placeholder="请输入作者姓名" maxlength="255">
+                </div>
+
+                <!-- 价格（选填） -->
+                <div class="field">
+                    <label class="field-label">价格 <span class="opt">（选填）</span></label>
+                    <div class="price-wrap">
+                        <span class="price-prefix">¥</span>
+                        <input type="number" class="field-input" id="price"
+                               placeholder="0.00" min="0" step="0.01">
+                    </div>
+                </div>
+
+                <!-- 描述（选填） -->
+                <div class="field">
+                    <label class="field-label">描述 <span class="opt">（选填）</span></label>
+                    <textarea class="field-input" id="description" rows="3"
+                              placeholder="简单描述这份文档的内容"
+                              maxlength="255"></textarea>
+                </div>
+
+                <hr class="divider">
+
+                <button type="submit" class="btn-submit" id="submit-btn">
+                    <i class="bi bi-cloud-upload"></i>上传文档
+                </button>
+
+            </form>
         </div>
     </div>
+
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const dropZone  = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     let selectedFile = null;
 
-    // ── 拖拽事件 ──────────────────────────────────────────
-    dropZone.addEventListener('dragover', e => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    /* ── 拖拽事件 ── */
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', e => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file) applyFile(file);
+        if (e.dataTransfer.files[0]) applyFile(e.dataTransfer.files[0]);
     });
-
-    // ── 点击选择文件 ───────────────────────────────────────
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files[0]) applyFile(fileInput.files[0]);
-    });
+    fileInput.addEventListener('change', () => { if (fileInput.files[0]) applyFile(fileInput.files[0]); });
 
     function applyFile(file) {
         selectedFile = file;
         dropZone.classList.add('has-file');
-        document.getElementById('drop-icon').className = 'bi bi-file-earmark-check';
+        document.getElementById('drop-icon-i').className = 'bi bi-file-earmark-check';
         document.getElementById('drop-text').textContent = file.name;
-        document.getElementById('drop-hint').textContent =
-            (file.size / 1024 / 1024).toFixed(2) + ' MB';
+        document.getElementById('drop-hint').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
     }
 
-    // ── 显示顶部提示 ───────────────────────────────────────
+    /* ── 提示条 ── */
     function showAlert(msg, type = 'danger') {
         const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
         document.getElementById('alert-area').innerHTML =
-            `<div class="alert alert-${type} alert-dismissible d-flex align-items-center" role="alert">
-                <i class="bi bi-${icon} me-2"></i>
-                <span>${msg}</span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-             </div>`;
+            `<div class="alert alert-${type}"><i class="bi bi-${icon}"></i>${msg}</div>`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ── 表单提交 ───────────────────────────────────────────
+    /* ── 表单提交 ── */
     document.getElementById('upload-form').addEventListener('submit', async e => {
         e.preventDefault();
 
-        // 前端基础校验
-        const title  = document.getElementById('title').value.trim();
-        const author = document.getElementById('author').value.trim();
-        const price  = document.getElementById('price').value;
-        const desc   = document.getElementById('description').value.trim();
+        const title    = document.getElementById('title').value.trim();
+        const author   = document.getElementById('author').value.trim();
+        const priceVal = document.getElementById('price').value.trim();
+        const desc     = document.getElementById('description').value.trim();
 
         if (!selectedFile)  { showAlert('请先选择要上传的文件'); return; }
         if (!title)         { showAlert('文档标题不能为空');     return; }
         if (!author)        { showAlert('作者不能为空');         return; }
-        if (price === '' || parseFloat(price) < 0) {
-            showAlert('请输入有效的价格（≥ 0）'); return;
+        if (priceVal !== '' && parseFloat(priceVal) < 0) {
+            showAlert('价格不能为负数'); return;
         }
 
-        // 组装 multipart/form-data
-        const formData = new FormData();
-        formData.append('file',   selectedFile);
-        formData.append('title',  title);
-        formData.append('author', author);
-        formData.append('price',  price);
-        if (desc) formData.append('description', desc);
-
-        // 按钮进入加载态
         const btn = document.getElementById('submit-btn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>上传中...';
+        btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i>上传中…';
+
+        const fd = new FormData();
+        fd.append('file',   selectedFile);
+        fd.append('title',  title);
+        fd.append('author', author);
+        if (priceVal !== '') fd.append('price', priceVal);
+        if (desc)            fd.append('description', desc);
 
         try {
-            const res = await fetch('/books/upload', { method: 'POST', body: formData });
+            const res = await fetch('/books/upload', { method: 'POST', body: fd });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data.detail || '上传失败，请重试');
             }
-            showAlert('上传成功！即将跳转到文档列表…', 'success');
-            setTimeout(() => window.location.href = '/', 1400);
+            showAlert('上传成功！即将返回文档列表…', 'success');
+            setTimeout(() => location.href = '/', 1400);
         } catch (err) {
-            showAlert(err.message);
+            showAlert(err.message || '上传失败，请稍后重试');
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-cloud-upload me-2"></i>上传文档';
+            btn.innerHTML = '<i class="bi bi-cloud-upload"></i>上传文档';
         }
     });
 </script>

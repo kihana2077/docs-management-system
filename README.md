@@ -149,7 +149,7 @@ uv run uvicorn backend.main:app --reload
 | `file` | File | ✅ | 上传的文件 |
 | `title` | string | ✅ | 文档标题（唯一） |
 | `author` | string | ✅ | 作者 |
-| `price` | float | ✅ | 价格（≥ 0） |
+| `price` | float | ❌ | 价格（≥ 0） |
 | `description` | string | ❌ | 描述（最多 255 字符） |
 
 ---
