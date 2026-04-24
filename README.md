@@ -1,75 +1,186 @@
-使用 FastAPI 和 SQLAlchemy 来搭建文件（书籍）管理系统是一个非常棒的选择！这个技术栈非常现代、运行速度快，而且 FastAPI 的自动生成文档功能（Swagger UI）对新手调试极其友好。
+﻿# 文档管理系统
 
-为了保持项目“不复杂但五脏俱全”，我为你设计了一套**前后端半分离（或轻量级全栈）**的方案。采用关系型数据库进行管理，代码结构按照经典的“关注点分离”原则来划分，这不仅能让你快速把项目跑起来，也非常符合标准软件工程的规范，后续加入用户系统会非常平滑。
+基于 **FastAPI + SQLAlchemy 2.0 + MySQL + Jinja2** 构建的轻量级文档（书籍）管理系统。支持文件上传、列表展示、在线下载和软删除，提供 Jinja2 渲染的 Web 界面和完整的 REST API。
 
-### 一、 补全后的技术栈推荐
+---
 
-* **核心后端框架**：`FastAPI`（提供高性能的 API 接口）
-* **数据库 ORM**：`SQLAlchemy`（用 Python 对象操作数据库，不用手写 SQL）
-* **轻量级数据库**：`SQLite`（新手首选，零配置，一个文件搞定。后续无缝迁移到 MySQL/PostgreSQL）
-* **数据验证与序列化**：`Pydantic`（FastAPI 内置，确保前端传来的数据格式绝对正确）
-* **表单与文件处理**：`python-multipart`（FastAPI 处理文件上传的必备依赖）
-* **前端 UI 展示**：`Jinja2` 模板引擎 + `Bootstrap 5` 或 `Tailwind CSS`（通过 CDN 引入）。
-    * *说明*：对于新手，强烈建议先用 Jinja2 配合现成的 CSS 框架在 FastAPI 内部渲染页面，这样只需要运行一个后端服务。等 API 跑通了，你想追求极致的交互体验，再引入 Vue3/React 进行彻底的前后端分离。
+## 功能特性
 
-### 二、 项目开发目录结构
+- 📁 **文件上传**：支持拖拽/点击上传，任意文件类型，自动以随机文件名落盘防冲突
+- 📋 **文档列表**：卡片式展示，根据文件类型自动显示对应图标
+- ⬇️ **文件下载**：一键下载，保留原始文件名
+- 🗑️ **软删除**：删除只修改数据库标记，磁盘文件保留，数据可恢复
+- 🌐 **Web 界面**：Bootstrap 5 响应式界面，无需额外前端框架
+- 📖 **自动 API 文档**：FastAPI 自动生成 Swagger UI（`/docs`）
 
-建议按照功能模块划分目录，这样代码不会全部堆在一个文件里，清晰易懂：
+---
 
-```text
-book_manager/
+## 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| Web 框架 | FastAPI |
+| ORM | SQLAlchemy 2.0（异步） |
+| 数据库 | MySQL（aiomysql 异步驱动） |
+| 数据验证 | Pydantic v2 |
+| 配置管理 | pydantic-settings（.env 读取） |
+| 前端模板 | Jinja2 + Bootstrap 5 |
+| 包管理器 | uv |
+
+---
+
+## 项目结构
+
+```
+docs-management-system/
 │
 ├── backend/
-│   ├── main.py              # 项目入口文件，初始化 FastAPI 实例
-│   ├── database.py          # 数据库连接配置 (SQLite 引擎和会话)
-│   ├── models.py            # 数据库模型 (定义 Book, Tag 表结构和关系)
-│   ├── schemas.py           # Pydantic 模型 (定义 API 请求和响应的数据格式)
-│   ├── crud.py              # 核心业务逻辑 (具体的增删改查函数)
-│   ├── routers/             # 路由分发 (分类管理 API)
-│   │   ├── books.py         # 书籍上传、列表、删除 API
-│   │   └── tags.py          # 标签创建、查询 API
-│   └── uploads/             # 存放用户真实上传的本地文件夹
+│   ├── main.py          # FastAPI 入口，注册路由、挂载模板/静态资源
+│   ├── config.py        # 读取 .env 的配置类
+│   ├── database.py      # 异步引擎、Session 工厂、ORM 基类
+│   ├── models.py        # 数据库模型（Docs 表）
+│   ├── schemas.py       # Pydantic 请求/响应模型
+│   ├── crud.py          # 数据库增删查业务逻辑
+│   ├── routers/
+│   │   └── books.py     # 文档相关 API 路由
+│   └── uploads/         # 上传文件存储目录（自动创建）
 │
-├── templates/               # 前端 HTML 页面 (Jinja2)
-│   ├── index.html           # 首页：漂亮的卡片式书籍列表
-│   └── upload.html          # 上传页：多文件选择与标签勾选
+├── templates/
+│   ├── index.html       # 文档列表首页
+│   └── upload.html      # 文件上传页
 │
-├── static/                  # 静态资源 (可选：自定义 CSS/JS/图片)
-│
-└── requirements.txt         # 依赖包列表
+├── static/              # 自定义静态资源目录（CSS/JS/图片）
+├── .env                 # 本地环境变量（不提交到仓库）
+├── .env.example         # 环境变量模板（提交到仓库供参考）
+└── pyproject.toml       # 项目依赖配置
 ```
 
-### 三、 每部分的作用与核心实现思路
+---
 
-#### 1. 数据库模型 (`models.py`) —— 实现软删除与多对多关系
-这里是项目的基石。你需要两张主表（书籍、标签）和一张关联表。
-* **书籍表 (Book)**：包含 `id`, `title`, `file_path`, `upload_time` 等。
-* **如何实现软删除？** 在 `Book` 模型中加入一个布尔类型的字段 `is_deleted = Column(Boolean, default=False)`。所谓的删除，只是把这个值更新为 `True`，而不是真的从硬盘和数据库里抹掉。
-* **多对多关系**：一本书可以有多个标签（如“科幻”、“编程”），一个标签也可以对应多本书。使用 SQLAlchemy 的 `relationship` 和一个中间表（`book_tag_association`）把它们连起来。
+## 快速开始
 
-#### 2. 数据格式约束 (`schemas.py`) —— 你的安全网
-在这里定义 Pydantic 类，比如 `BookCreate` 和 `BookResponse`。它的作用是规定前端传来的数据必须是什么格式，以及后端返回给前端的数据要隐藏哪些敏感信息（比如不要把系统真实的绝对路径返回给前端）。
+### 1. 克隆项目
 
-#### 3. 业务逻辑层 (`crud.py`) —— 与数据库打交道
-在这里编写具体的 Python 函数：
-* `get_books()`: 查询时，**永远加上 `filter(models.Book.is_deleted == False)`** 的条件，这样被软删除的书籍就不会出现在首页了。
-* `delete_book()`: 找到对应的书籍对象，执行 `book.is_deleted = True`，然后 `session.commit()`。
-* `create_book()`: 接收文件路径和标签列表，将其存入数据库。
+```bash
+git clone https://github.com/your-username/docs-management-system.git
+cd docs-management-system
+```
 
-#### 4. API 路由 (`routers/books.py`) —— 处理前端请求
-使用 FastAPI 的 `@router.post("/upload")` 装饰器。
-* **多文件上传实现**：在参数中使用 `files: List[UploadFile] = File(...)`。
-* **保存文件**：遍历 `files`，使用 Python 原生的 `with open(filepath, "wb") as buffer:` 将文件内容分块写入到 `uploads/` 目录中。保存完毕后，调用 `crud.py` 中的函数把路径记录到数据库。
+### 2. 安装依赖
 
-#### 5. 首页美观展示 (`templates/index.html`)
-* **实现方式**：在 `main.py` 中配置 `Jinja2Templates`。当用户访问根路径 `/` 时，后端去数据库拉取所有未被删除的书籍列表，将这个列表传递给 `index.html`。
-* **UI 建议**：引入 Bootstrap 5，使用它的 **Cards（卡片）** 组件。每本书渲染成一个卡片，卡片上方显示书名，下方用彩色的 Badge（徽章）显示它包含的标签，右上角放一个红色的“删除”小按钮。
+本项目使用 [uv](https://docs.astral.sh/uv/) 管理依赖：
 
-### 四、 后续演进：如何加入用户登录系统？
+```bash
+# 安装 uv（如果尚未安装）
+pip install uv
 
-当你把基础的 CRUD 跑通后，加入用户系统其实水到渠成：
-1.  在 `models.py` 里加一个 `User` 表（包含账号、哈希加密后的密码）。
-2.  引入 `passlib` 处理密码加密，引入 `python-jose` 生成 JWT Token。
-3.  给 Book 表加一个外键 `owner_id`，关联到 User 表，实现“每个人只能看到/删除自己上传的书籍”。
+# 安装所有依赖
+uv sync
+```
 
-既然系统的骨架已经搭好了，**你是希望我们先从最底层的数据库模型（`models.py`）代码开始写起，还是想先看看如何用 FastAPI 实现多文件接收的接口代码呢？**
+### 3. 配置环境变量
+
+复制模板并填入你的数据库信息：
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env`：
+
+```env
+DB_HOST=your_mysql_host      # MySQL 服务器地址
+DB_PORT=3306
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_NAME=fastapi_db           # 数据库名（需提前在 MySQL 中创建）
+DB_CHARSET=utf8mb4
+
+DB_ECHO=false                # 生产环境建议关闭 SQL 日志
+DB_POOL_SIZE=10
+DB_MAX_OVERFLOW=20
+
+UPLOAD_DIR=backend/uploads   # 文件存储目录
+```
+
+### 4. 创建数据库
+
+在 MySQL 中执行：
+
+```sql
+CREATE DATABASE fastapi_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+> 数据库表会在**首次启动时自动创建**，无需手动执行建表 SQL。
+
+### 5. 启动服务
+
+```bash
+uv run uvicorn backend.main:app --reload
+```
+
+启动成功后访问：
+
+| 地址 | 说明 |
+|------|------|
+| http://127.0.0.1:8000 | 文档列表首页 |
+| http://127.0.0.1:8000/upload | 上传文档页 |
+| http://127.0.0.1:8000/docs | Swagger API 文档 |
+
+---
+
+## API 说明
+
+所有接口均以 `/books` 为前缀。
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/books/` | 获取所有未删除文档列表 |
+| `POST` | `/books/upload` | 上传文档（multipart/form-data） |
+| `GET` | `/books/{id}/download` | 下载指定文档 |
+| `DELETE` | `/books/{id}` | 软删除指定文档 |
+
+### 上传接口参数
+
+`POST /books/upload` 接受 `multipart/form-data`：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `file` | File | ✅ | 上传的文件 |
+| `title` | string | ✅ | 文档标题（唯一） |
+| `author` | string | ✅ | 作者 |
+| `price` | float | ✅ | 价格（≥ 0） |
+| `description` | string | ❌ | 描述（最多 255 字符） |
+
+---
+
+## 核心设计说明
+
+### 文件与数据库的关联方式
+
+上传文件时，系统做两件独立的事并通过数据库字段绑定：
+
+1. **磁盘存储**：用 UUID 生成随机文件名落盘（如 `a3f8be...d2.pdf`），避免同名覆盖
+2. **数据库记录**：写入一行元数据，其中：
+   - `filename`：保留用户的原始文件名，下载时恢复此名称
+   - `filepath`：服务器上的真实存储路径，下载时读取此路径
+
+下载时根据 `id` 查到 `filepath` 读取文件，用 `filename` 设置下载名，两者分工明确。
+
+### 软删除
+
+删除操作不会从磁盘或数据库中真正移除数据，只将 `is_deleted` 字段置为 `True`。列表查询始终过滤该字段，被删除的文档对用户不可见，但数据保留，便于审计和恢复。
+
+---
+
+## 开发环境要求
+
+- Python ≥ 3.13
+- MySQL ≥ 5.7
+- uv（包管理器）
+
+---
+
+## License
+
+MIT
