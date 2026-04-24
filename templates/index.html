@@ -113,7 +113,9 @@
                             <h6 class="mb-1 fw-semibold text-truncate" title="{{ doc.title }}">{{ doc.title }}</h6>
                             <span class="text-muted small">{{ doc.author }}</span>
                         </div>
+                        {% if doc.price is not none %}
                         <span class="price-badge">¥{{ "%.2f"|format(doc.price) }}</span>
+                        {% endif %}
                     </div>
 
                     <!-- 描述（超出省略） -->
@@ -128,7 +130,7 @@
                     <!-- 上传时间 -->
                     <small class="text-muted">
                         <i class="bi bi-clock me-1"></i>
-                        {{ doc.create_time.strftime('%Y-%m-%d %H:%M') }}
+                        {% if doc.create_time %}{{ doc.create_time.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}
                     </small>
                 </div>
 
