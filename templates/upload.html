@@ -348,6 +348,13 @@
         document.getElementById('drop-icon-i').className = 'bi bi-file-earmark-check';
         document.getElementById('drop-text').textContent = file.name;
         document.getElementById('drop-hint').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+
+        // 自动提取文件名（去掉扩展名）注入标题，若用户已手动填写则不覆盖
+        const titleInput = document.getElementById('title');
+        if (!titleInput.value.trim()) {
+            const nameWithoutExt = file.name.replace(/\.[^.]+$/, '');
+            titleInput.value = nameWithoutExt;
+        }
     }
 
     /* ── 提示条 ── */
