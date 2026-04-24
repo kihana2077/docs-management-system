@@ -1,7 +1,9 @@
 from pathlib import Path
+from urllib.parse import quote
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend import crud, schemas
@@ -74,3 +76,26 @@ async def delete_doc(doc_id: int, db: AsyncSession = Depends(get_db)):
 	if doc is None:
 		raise HTTPException(status_code=404, detail="文档不存在或已删除")
 	return schemas.DeleteResponse(message="文档已删除", doc_id=doc.id)
+
+
+@router.get("/{doc_id}/download")
+async def download_doc(doc_id: int, db: AsyncSession = Depends(get_db)):
+	# 先从数据库里查到这条记录，确认文档存在且未被软删除。
+	doc = await crud.get_doc_by_id(db, doc_id)
+	if doc is None:
+		raise HTTPException(status_code=404, detail="文档不存在或已删除")
+
+	file_path = Path(doc.filepath)
+	# 磁盘上的实际文件可能已被手动删除，需要单独校验。
+	if not file_path.exists():
+		raise HTTPException(status_code=410, detail="文件已不存在于服务器，请联系管理员")
+
+	# Content-Disposition 里的文件名做 RFC 5987 编码，保证中文文件名在浏览器里显示正常。
+	encoded_filename = quote(doc.filename)
+	return FileResponse(
+		path=file_path,
+		filename=doc.filename,
+		headers={
+			"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
+		},
+	)

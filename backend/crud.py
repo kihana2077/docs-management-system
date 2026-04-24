@@ -13,6 +13,12 @@ async def get_docs(db: AsyncSession) -> list[models.Docs]:
 	)
 	return list(result.scalars().all())
 
+async def get_doc_by_id(db: AsyncSession, doc_id: int) -> models.Docs | None:
+    result = await db.execute(
+        select(models.Docs)
+        .where(models.Docs.id == doc_id, models.Docs.is_deleted.is_(False))
+    )
+    return result.scalars().first()
 
 async def create_doc(
 	db: AsyncSession,
