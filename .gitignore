@@ -10,3 +10,4 @@ wheels/
 .venv
 
 template_fastapi.py
+.env
