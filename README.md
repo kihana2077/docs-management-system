@@ -181,6 +181,14 @@ uv run uvicorn backend.main:app --reload
 
 ---
 
+---
+## 后续更新方向
+- upload文件后缀白名单配置
+- 删除鉴权（启用user配置，数据库建表加实现登录系统）
+- 上传文件大小限制，用户个人存贮空间限制
+- 优化交互逻辑。实现前端预览文件功能
+---
+
 ## License
 
 MIT
