@@ -62,7 +62,7 @@ docs-management-system/
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/your-username/docs-management-system.git
+git clone [https://github.com/your-username/docs-management-system](https://github.com/kihana2077/docs-management-system).git
 cd docs-management-system
 ```
 
